@@ -1,3 +1,6 @@
+spring:
+  profiles:
+    active: terrencewei-s3-keys
 server:
   port: 8081
 logging:
@@ -6,8 +9,24 @@ logging:
     # TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
     ROOT: INFO
     org.springframework: ERROR
+custom-mongodb-config:
+    hosts:
+      - mongo_db # using docker-compose service name as mongo db host to connect mongo db via docker-compose default network
+    ports:
+      - 27017
+    username: test
+    password: test
+    database: test
+    authenticationDatabase: test
+    connectionPoolMaxSize: 5
+    connectionPoolMinSize: 1
+    # all time unit is seconds
+    connectionPoolMaxWaitTime: 1
+    socketConnectTimeout: 1
+    socketReadTimeout: 5
+    clusterSettingsServerSelectionTimeout: 1
 aws-s3-config:
-      accessKey: "xxxxxx"
-      secretKey: "xxxxxx"
-      region: "us-east-1"
-      bucket: "xxxxxx"
+    accessKey: "xxxxxx"
+    secretKey: "xxxxxx"
+    region: "xxxxxx"
+    bucket: "xxxxxx"

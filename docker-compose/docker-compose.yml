@@ -1,0 +1,33 @@
+version: '2'
+services:
+  mongo_db:
+    build:
+      context: ./mongo_db
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - "./mongo_db/data/db:/data/db"
+  nginx:
+    image: nginx:1.15.11
+    ports:
+         - "8082:80"
+    volumes:
+     - "./nginx/nginx.conf:/etc/nginx/nginx.conf"
+     - "./nginx/conf.d:/etc/nginx/conf.d"
+     - "./nginx/log:/var/log/nginx"
+     - "./nginx/cache:/tmp/nginx_cache"
+  app-spring-web-flux-study:
+    mem_limit: 256M
+    image: app-spring-web-flux-study
+    entrypoint: java -jar /app.jar # the jar name is defined in src/main/docker/DockerFile
+    ports:
+     - "8081:8081"
+    restart: always
+    links:
+     - mongo_db
+     - nginx
+    depends_on:
+     - mongo_db
+     - nginx

@@ -11,13 +11,14 @@ import org.springframework.core.io.buffer.DefaultDataBuffer;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
-import org.springframework.http.codec.multipart.FormFieldPart;
 import org.springframework.http.codec.multipart.Part;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import com.example.mongodb.MongoRepository;
+import com.example.mongodb.TestCollection;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -27,7 +28,9 @@ import reactor.core.publisher.Mono;
 public class S3RouterHandler {
 
     @Autowired
-    private S3Util s3Util;
+    private S3Util          s3Util;
+    @Autowired
+    private MongoRepository mongoRepository;
 
 
 
@@ -36,32 +39,37 @@ public class S3RouterHandler {
                 .multipartData()
                 .flatMap(pMultiValueMap -> {
                     // get input
-                    String name = ((FormFieldPart) pMultiValueMap.getFirst("name")).value();
-                    List<Part> file = pMultiValueMap.get("file");
-                    // processing
-                    Flux<String> result = Flux
+                    List<Part> file = pMultiValueMap.get("files");
+                    // dp upload
+                    Flux<TestCollection> uploadResult = Flux
                             .fromIterable(file)
                             .cast(FilePart.class)
                             .flatMap(pFilePart -> {
-                                Flux<String> contentParseResult = pFilePart
+                                String fileName = pFilePart.filename();
+                                return pFilePart
                                         .content()
                                         .flatMap(pDataBuffer -> {
-                                            boolean uploadResult = false;
+                                            boolean success = false;
                                             try {
                                                 byte[] data = new byte[pDataBuffer.readableByteCount()];
                                                 pDataBuffer.read(data);
-                                                uploadResult = s3Util.putObject(name, data);
-                                                log.info("Upload to S3 result:{}", uploadResult);
+                                                success = s3Util.putObject(fileName, data);
+                                                log.info("Upload file:{} to S3 result:{}", fileName, success);
                                             } catch (Exception e) {
                                                 log.error("Upload to S3 failed", e);
                                             }
-                                            return Mono.just(Boolean.toString(uploadResult));
+                                            return Mono.just(new TestCollection(fileName, success));
                                         });
-                                return contentParseResult;
+                            })
+                            .flatMap(pTestCollection -> {
+                                // save to mongo before upload, just for test mongo
+                                Mono<TestCollection> mongoResult = mongoRepository.save(pTestCollection);
+                                log.info("Save to Mongo result:{}", pTestCollection);
+                                return mongoResult;
                             });
                     return ok()
                             .contentType(org.springframework.http.MediaType.APPLICATION_STREAM_JSON)
-                            .body(result, String.class);
+                            .body(uploadResult, TestCollection.class);
                 });
     }
 

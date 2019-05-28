@@ -1,0 +1,2 @@
+FROM java:8
+ADD spring-web-flux-study-0.1.jar app.jar
