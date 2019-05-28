@@ -1,0 +1,13 @@
+server:
+  port: 8081
+logging:
+  level:
+    # loglevel values: @see org.springframework.boot.logging.LogLevel
+    # TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
+    ROOT: INFO
+    org.springframework: ERROR
+aws-s3-config:
+      accessKey: "xxxxxx"
+      secretKey: "xxxxxx"
+      region: "us-east-1"
+      bucket: "xxxxxx"
